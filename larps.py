@@ -1,13 +1,16 @@
 import paramiko
 import random
-
+error = open("errorlog.txt")
 def send_to_vault(hostname, password):
     key = paramiko.RSAKey.from_private_key_file("vault-key.pem")
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(hostname="vault.ncsa.tech",
-                        username='ubuntu',
-                        pkey=key)
+    try:
+        ssh_client.connect(hostname="vault.ncsa.tech",
+                            username='ubuntu',
+                            pkey=key)
+    except:
+        f.write("Failed to connect to vault")
     cmd = "vault kv put Systems-Team/" + hostname + "-root password=" + password
     stdin, stdout, stderr = ssh_client.exec_command(cmd)
 
@@ -17,9 +20,13 @@ def set_root_pass(hostname, password):
     hostname = hostname + '.ncsa.tech'
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(hostname=hostname,
-                        username='LARPS',
-                        pkey=key)
+    try:
+        ssh_client.connect(hostname=hostname,
+                            username='LARPS',
+                            pkey=key)
+    except:
+        errmesg = "failed to connect to " + hostname
+        f.write(errmesg)
     cmd = "sudo usermod -p $(openssl passwd -1 " + password + ") root"
     stdin, stdout, stderr = ssh_client.exec_command(cmd)
     out=stderr.read().decode()
@@ -54,3 +61,4 @@ for server in f:
 
     send_to_vault(server, password)
     set_root_pass(server, password)
+f.close()
